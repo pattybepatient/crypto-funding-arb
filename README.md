@@ -41,9 +41,9 @@ Spread (OKX − HL, annualized): **mean -0.27%**, std 7.76%, range [-27.88%, +22
 
 ![Cross-exchange spread](figures/cross_exchange_spread.png)
 
-### 3. Stress arrives off-peak, not in sync
+### 3. Stress arrives staggered, not in sync
 
-During the April 2026 drawdown, both venues printed deep negative funding — but **3–6 days apart** (OKX min on Apr 17, HL min on Apr 14, spread extreme of -27.88% on Apr 11 when OKX was at -17% while HL sat at +11%). Cross-venue correlation stayed flat through the stress window (0.358 vs 0.351 full-period): neither co-crash nor systematic divergence, but **staggered shocks**. For a spread position this is worse than co-movement — desynchronized stress is exactly what throws the spread to extremes, meaning the strategy's source of return and source of tail risk are the same phenomenon.
+During the April 2026 drawdown, both venues printed deep negative funding — but **3–6 days apart** (OKX min on Apr 17, HL min on Apr 14, spread extreme of -27.88% on Apr 11 when OKX was at -17% while HL sat at +11%). Cross-venue correlation stayed flat through the stress window (0.358 vs 0.351 full-period): neither co-crash nor systematic divergence, but **staggered shocks**. For a spread position, this *could* be worse than co-movement: desynchronized stress is the kind of dynamic that throws the spread to extremes, which would make the strategy's source of return and its source of tail risk the same phenomenon. But this rests on a **single stress episode** (April 2026). With one observed event I cannot separate a structural feature of OKX-Hyperliquid dynamics from a one-off coincidence, so I treat this as a **hypothesis to test against multiple drawdowns**, not an established result — the same data-depth constraint noted in [Limitations](#limitations).
 
 ![April stress divergence](figures/april_stress_divergence.png)
 
@@ -110,6 +110,7 @@ Stated plainly, because they matter:
 - **In-sample parameters.** The backtest's window/threshold choices (30 periods, 1.0σ entry, 0.5σ exit) were not optimized, but neither were they validated out-of-sample — the sample is too short to split meaningfully.
 - **Cost model is simplified.** Flat 0.05% taker fee per fill; no slippage, no funding-payment timing effects, no margin/borrow costs.
 - **Two venues, one asset.** OKX–Hyperliquid BTC only; other pairs may behave differently.
+- **Perfect-hedge assumption.** The cross-exchange PnL assumes the two perp legs are perfectly delta-hedged, so directional exposure nets to zero and only the funding spread remains. In practice the legs are perps on *different* venues whose prices can drift apart; the residual basis carries its own PnL that this model omits. Realized returns would include a basis-risk term not captured here.
 
 ## Future work
 
