@@ -15,9 +15,13 @@ Contains BOTH versions deliberately:
 The gap between the two numbers (+328% vs -66.6%) is the project's
 central lesson: a statistically real pattern (mean reversion, see
 analysis_meanreversion.py) is not the same thing as an executable edge.
-The rolling signal is inherently lagged; because reversion is slow,
-entries are systematically late and the position bleeds negative carry
-and fees waiting for a reversion that no longer pays for the trip.
+For where the corrected loss actually comes from, see
+diagnose_backtest.py: the bulk of it is negative carry while holding —
+the rule shorts the spread when it is above its rolling mean, but
+"above the rolling mean" and "positive" are different conditions, and a
+positive spread held short pays out every period. Entry timing does not
+explain it: none of the 30 entries fired while the deviation was
+already narrowing.
 """
 
 import os

@@ -2,7 +2,7 @@
 
 A quantitative research project on BTC perpetual funding rates across OKX (CEX) and Hyperliquid (DEX) — testing whether the cross-exchange funding spread is a tradable opportunity, and discovering why a naive approach loses money.
 
-**TL;DR:** The spread is statistically mean-reverting (ADF p < 0.001), which sounds like an arbitrage opportunity. But an honest backtest — no look-ahead bias, real carry cash flows, retail transaction costs — loses **-66.6% over 3 months**. The gap between "statistically significant pattern" and "executable strategy" is the entire story of this project.
+**TL;DR:** An ADF test gives strong evidence against a unit root in the spread (p < 0.0001), which sounds like an arbitrage opportunity. But an honest backtest — no look-ahead bias, real carry cash flows, retail transaction costs — loses **-66.6% over 3 months**. The gap between "statistically significant pattern" and "executable strategy" is the entire story of this project.
 
 ---
 
@@ -49,10 +49,10 @@ During the April 2026 drawdown, both venues printed deep negative funding — bu
 
 ### 4. The spread is mean-reverting — but slowly
 
-- ADF test: statistic -5.003, **p < 0.0001** → reject unit root, the spread is stationary/mean-reverting
+- ADF test: statistic -5.003, **p < 0.0001** → strong evidence against a unit root. Note this rejects the random-walk null; it does not by itself establish the speed or form of reversion.
 - Autocorrelation decays smoothly: 0.627 (8h) → 0.453 → 0.427 → 0.335 → 0.280 → 0.192 (48h)
 
-The spread behaves like a ball on a loose rubber band: it always comes back to ~0, but deep dislocations take *days* to repair. That slowness turns out to be fatal.
+The spread behaves like a ball on a loose rubber band: it always comes back to ~0, but deep dislocations take *days* to repair.
 
 ![Mean reversion check](figures/spread_mean_reversion.png)
 
@@ -76,13 +76,15 @@ A curve that perfect is not a discovery; it is a bug report. Two violations:
 
 ![Corrected backtest](figures/backtest_corrected.png)
 
-**Why it loses:** the rolling signal is inherently lagged. Because reversion is slow (finding #4), by the time a dislocation is statistically confirmed, the spread is already turning — the strategy systematically enters late, gets caught on the wrong side, and bleeds negative carry plus fees while waiting for a reversion that arrives too late to pay for the trip.
+**Why it loses:** I originally attributed the loss to signal lag — the idea that by the time a dislocation is statistically confirmed, the spread is already turning, so entries land on the wrong side of the reversal. That explanation was never tested, and it does not hold. Across all 30 entries, zero occurred while the deviation was narrowing; every entry fired on a move that widened it (see `src/diagnose_backtest.py`, which defines "already reverting" as the most recent step shrinking the deviation).
 
-## Interpretation: limits to arbitrage, measured
+Decomposing the cash flows gives a different account. The corrected PnL is `position × current spread`, not the change in the spread. When the spread sits above its rolling mean the rule goes short, but "above the rolling mean" and "positive" are different things: a positive spread held short pays out every period. Of the 125 periods holding a position, 86 paid the funding spread and 34 earned it (5 were exactly zero). Those payments sum to -67.34% against +12.56% earned, giving gross -54.78%; fees take the net to -66.58%. The loss comes from the sign of the carry while holding, not from when the position was opened.
 
-The corrected result is not "the strategy is fake." It is a measurement of **how high the execution barrier is**. The spread's mean reversion is real, but capturing it requires what retail participants lack: low-latency execution (to beat the signal lag), institutional fee tiers (to survive the switching costs), real-time cross-venue margin management (to survive staggered stress, finding #3), and risk systems that act in minutes rather than 8-hour bars.
+## Interpretation: the execution barrier, measured
 
-The opportunity persists *because* harvesting it naively loses money — a textbook case of limits to arbitrage, reproduced on a $0 research budget.
+The corrected result is not "the strategy is fake." It is a measurement of **how high the execution barrier is**. The statistical evidence for reversion is strong (finding #4), but capturing it requires what retail participants lack: institutional fee tiers (to survive the switching costs), real-time cross-venue margin management (to survive staggered stress, finding #3), and risk systems that act in minutes rather than 8-hour bars.
+
+Whether the spread persists because these barriers deter arbitrage capital is a limits-to-arbitrage hypothesis that this dataset cannot test; what the backtest does establish is the height of the barrier for one naive implementation.
 
 ## Repository structure
 
@@ -95,7 +97,8 @@ The opportunity persists *because* harvesting it naively loses money — a textb
 │   ├── build_spread.py           # align 1h→8h, merge, annualize, spread stats
 │   ├── analysis_stress.py        # April stress window + correlation analysis
 │   ├── analysis_meanreversion.py # ADF test + autocorrelation
-│   └── backtest.py               # corrected backtest (and the flawed one, kept for the lesson)
+│   ├── backtest.py               # corrected backtest (and the flawed one, kept for the lesson)
+│   └── diagnose_backtest.py      # decomposes the corrected loss: carry sign vs. entry timing
 ├── data/                         # CSVs written by fetch scripts
 └── figures/                      # charts written by analysis scripts
 ```
